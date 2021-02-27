@@ -20,7 +20,13 @@ export default {
       allRefresh: true,
       on: {
         success: this.onSuccess,
-        open: this.onOpen
+        opened: this.onOpened
+      },
+      //文本标签
+      labels: {
+        add: '新增',
+        edit: '编辑',
+        read: '查看'
       }
     }
   },
@@ -45,17 +51,17 @@ export default {
   methods: {
     /**设置信息 */
     setInfo() {
-      const { form, title, readonly, actions } = this
+      const { form, title, readonly, actions, labels } = this
       //添加
       if (this.isAdd_) {
-        form.title = `新增${title}`
+        form.title = `${labels.add}${title}`
         form.icon = 'add'
         form.customResetFunction = null
         form.action = actions.add
         return
       }
       //编辑
-      form.title = `${readonly ? '查看' : '编辑'}${title}`
+      form.title = `${readonly ? labels.read : labels.edit}${title}`
       form.icon = readonly ? 'preview' : 'edit'
       form.customResetFunction = this.reset
       form.action = actions.update
@@ -71,6 +77,12 @@ export default {
         .edit(id)
         .then(data => {
           this.model_ = this.$_.merge({}, data)
+
+          //打开后执行的方法
+          if (this.afterEdit) {
+            this.afterEdit()
+          }
+
           //重置
           this.$refs.form.reset()
           form.loading = false
@@ -80,9 +92,9 @@ export default {
         })
     },
     onSuccess(data) {
-      this.$emit('success', this.form.model, data)
+      this.$emit('success', this.form.model, data, this.isAdd_)
     },
-    onOpen() {
+    onOpened() {
       //设置图标
       this.setInfo()
 
@@ -92,8 +104,10 @@ export default {
           this.edit()
         }
       } else {
-        //如果是新增则要重置
-        this.$refs.form.reset()
+        //如果总是刷新则要重置
+        if (this.allRefresh) {
+          this.$refs.form.reset()
+        }
       }
 
       //打开后执行的方法

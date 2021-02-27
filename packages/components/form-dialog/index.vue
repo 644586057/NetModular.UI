@@ -1,6 +1,39 @@
 <template>
-  <nm-dialog ref="dialog" class="nm-form-dialog" v-bind="dialog" v-on="dialogOn" :visible.sync="visible_">
-    <nm-form ref="form" v-bind="form" v-on="formOn">
+  <nm-dialog
+    ref="dialog"
+    class="nm-form-dialog"
+    :title="title"
+    :icon="icon"
+    :width="width"
+    :height="height"
+    :footer="footer"
+    :fullscreen="fullscreen"
+    :close-on-click-modal="closeOnClickModal"
+    :loading="showLoading"
+    :footer-close-button="footerCloseButton"
+    :draggable="draggable"
+    :drag-out-page="dragOutPage"
+    :drag-min-width="dragMinWidth"
+    :visible.sync="visible_"
+    v-on="dialogOn"
+  >
+    <nm-form
+      ref="form"
+      no-loading
+      :model="model"
+      :rules="rules"
+      :action="action"
+      :label-width="labelWidth"
+      :label-position="labelPosition"
+      :customValidate="validate"
+      :success-msg="successMsg"
+      :success-msg-text="successMsgText"
+      :disabled="disabled"
+      :inline="inline"
+      :customResetFunction="customResetFunction"
+      v-on="formOn"
+      @validate="onValidate"
+    >
       <slot />
     </nm-form>
 
@@ -127,38 +160,18 @@ export default {
       default: true
     },
     /** 是否显示底部关闭按钮 */
-    footerCloseButton: Boolean
+    footerCloseButton: Boolean,
+    /** 可拖拽的 */
+    draggable: {
+      type: Boolean,
+      default: null
+    },
+    /** 是否可拖出页面 */
+    dragOutPage: Boolean,
+    /** 拖拽出页面后保留的最小宽度 */
+    dragMinWidth: Number
   },
   computed: {
-    dialog() {
-      return {
-        title: this.title,
-        icon: this.icon,
-        width: this.width,
-        height: this.height,
-        footer: this.footer,
-        fullscreen: this.fullscreen,
-        closeOnClickModal: this.closeOnClickModal,
-        loading: this.showLoading,
-        footerCloseButton: this.footerCloseButton
-      }
-    },
-    form() {
-      return {
-        noLoading: true,
-        model: this.model,
-        rules: this.rules,
-        action: this.action,
-        labelWidth: this.labelWidth,
-        labelPosition: this.labelPosition,
-        validate: this.validate,
-        successMsg: this.successMsg,
-        successMsgText: this.successMsgText,
-        disabled: this.disabled,
-        inline: this.inline,
-        customResetFunction: this.customResetFunction
-      }
-    },
     showLoading() {
       return !this.noLoading && (this.loading_ || this.loading)
     }
@@ -223,6 +236,9 @@ export default {
     },
     onClosed() {
       this.$emit('closed')
+    },
+    onValidate(prop, valid, msg) {
+      this.$emit('validate', prop, valid, msg)
     }
   }
 }

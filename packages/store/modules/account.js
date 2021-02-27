@@ -10,7 +10,7 @@ const resolveRouteMenus = (menu, rootId, bc) => {
       route: ''
     })
     menu.rootId = rootId
-    routeMenus.set(menu.routeName, { menu, breadcrumb: bc_ })
+    routeMenus.set(menu.routeName + '|' + (menu.routeParams || '{}'), { menu, breadcrumb: bc_ })
   } else if (menu.type === 0) {
     bc_.push({
       title: menu.name,
@@ -55,7 +55,7 @@ export default {
       let list = []
       if (state.routeMenus) {
         state.routeMenus.forEach((value, key) => {
-          list.push(key)
+          list.push(key.split('|')[0])
         })
       }
       return list
@@ -68,31 +68,31 @@ export default {
     async init({ state, rootState, commit, dispatch }) {
       if (state.id) return
 
-      let account = await rootState.app.system.actions.getLoginInfo()
+      try {
+        let authInfo = await rootState.app.system.actions.getAuthInfo()
 
-      // 设置皮肤
-      dispatch('app/skins/init', account.skin, { root: true })
+        // 设置皮肤
+        dispatch('app/skins/init', authInfo.skin, { root: true })
 
-      // 初始化
-      commit('init', account)
+        // 初始化
+        commit('init', authInfo)
 
-      // 初始化路由菜单数组
-      dispatch('initRouteMenus', account)
+        // 初始化路由菜单数组
+        dispatch('initRouteMenus', authInfo)
 
-      const accountId = await dispatch('cacheGet')
+        const accountId = await dispatch('cacheGet')
 
-      // 如果账户变了，则需要清除原有的一些数据
-      if (account.id !== accountId) {
-        dispatch('app/page/reset', null, { root: true })
+        // 如果账户变了，则需要清除原有的一些数据
+        if (authInfo.id !== accountId) {
+          dispatch('app/page/reset', null, { root: true })
+        }
+
+        dispatch('cacheSet')
+      } catch (error) {
+        console.log(error)
+        //如果请求失败则退出
+        dispatch('app/system/logout', null, { root: true })
       }
-
-      dispatch('cacheSet')
-    },
-    /**
-     * @description 退出
-     */
-    logout({ commit }) {
-      commit('reset')
     },
     cacheGet() {
       return db.get('accountId')
@@ -102,6 +102,7 @@ export default {
     },
     /** 初始化路由菜单数组 */
     initRouteMenus({ commit }, account) {
+      routeMenus = new Map()
       account.menus.map(m => {
         resolveRouteMenus(m, m.id)
       })
@@ -124,7 +125,7 @@ export default {
     initRouteMenus(state, routeMenus) {
       state.routeMenus = routeMenus
     },
-    reset(state) {
+    clear(state) {
       state.id = ''
       state.name = ''
     }
